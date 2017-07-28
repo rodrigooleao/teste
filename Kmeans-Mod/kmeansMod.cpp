@@ -163,7 +163,7 @@ public:
         }
 
         //recalculando os centroides
-  //FON
+  //FONFON
         for( int i = 0 ; i < this->clusters.size() ; i++){
           clusters[i].center = getNewCenterByFreq( clusters[i]);
         }

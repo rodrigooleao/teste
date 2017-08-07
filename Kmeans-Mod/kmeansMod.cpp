@@ -4,13 +4,53 @@
 #include <ctime>
 #include <cstdlib>
 #include <algorithm>
+#include <utility>
+#include <fstream>
+#include <string>
 
 using namespace std;
 
-int dimension;
+int dimension = 9125;
 int n_clusters;
 int max_iter;
 int total_points;
+int n_elements = 671;
+vector<pair<int, int> > dataPoints[671];
+vector<int> movieList;
+
+void readDataSet(){
+  
+  pair<int, int> novo;
+  int a , b;
+  int pos = 0;
+  while( cin >>a>>b ){
+    if( a == -1 && b == -1){
+      pos++;
+      continue;
+    }
+    else{
+      novo = make_pair(a , b);
+      dataPoints[pos].push_back(novo);
+     // cout <<novo.first<<" "<<novo.second<<endl;
+    }
+  }
+  
+}
+
+int searchRating( int user , int movie){
+  vector<pair<int, int> > :: iterator it;
+
+  for( it = dataPoints[user].begin() ; it != dataPoints[user].end() ; it++ ){
+    if( it->first == movie ){
+      return it->second;
+    }
+    else if( it->first > movie){
+      return 0;
+    }
+  } 
+
+  return 0;
+}
 
 class Point{
 public:
@@ -19,7 +59,9 @@ public:
   int dimension;
   vector<int> values;
 
-  Point();
+  Point(){
+
+  }
   Point( int dimension, vector<int> pts){
     this->dimension = dimension;
     this->cluster = -1;
@@ -42,7 +84,7 @@ public:
     double sum = 0.0;
 
     for( int i = 0 ; i < this->dimension ; i++){
-      sum += (( this->values[i] = p.values[i]) * ( this->values[i] = p.values[i]));
+      sum += (( this->values[i] - p.values[i]) * ( this->values[i] - p.values[i]));
     }
 
     sum = sqrt( sum );
@@ -55,6 +97,10 @@ class Cluster{
 public:
   vector<Point> points;
   Point center;
+
+  Cluster(){
+
+  }
 
   void removePoint( Point p){
 
@@ -85,24 +131,33 @@ public:
   void CreateClusters(){
 
     vector<int> chosen;
+    Cluster cl;
+
+    for( int i = 0 ; i < n_clusters ; i++){
+      this->clusters.push_back( cl );
+    }
+
     int x = -1;
     for( int i = 0 ; i < n_clusters ; i++){
+      
       do{
          x = rand()%this->points.size();
       }while( find( chosen.begin() , chosen.end() , x) != chosen.end());
 
+      
       chosen.push_back( x );
-      clusters[i].center =  this->points[i];
+      cout <<x<<endl;
+      clusters[i].center =  this->points[x];
+      
     }
-
   }
 
-  int findNearestCenter( Point p){
-    double min = p.Distance( clusters[0].center);
+  int findNearestCenter( int i){
+    double min = this->points[i].Distance( clusters[0].center);
     int cluster = 0;
 
     for( int i = 0 ; i < n_clusters ; i++){
-      double dist = p.Distance( clusters[i].center );
+      double dist = this->points[i].Distance( clusters[i].center );
       if( dist < min ){
         min = dist;
         cluster = i;
@@ -112,8 +167,8 @@ public:
     return cluster;
   }
 
-  Point getNewCenterByFreq( Cluster c){
-    Point newCenter;
+  vector<int> getNewCenterByFreq( Cluster c){
+    vector<int> newCenter;
     int cont[5];
 
     
@@ -137,18 +192,38 @@ public:
 
       if( cont[4] == cont[3])maior = 0;
 
-      newCenter.values[i] = maior;
+      newCenter.push_back( maior) ;
     }
+
+    return newCenter;
   }
   void run(){
+    cout<<"RUN START"<<endl;
+    this->CreateClusters();
+    
     int iter = 0;
+
     while( 1 ){
       
         bool change = false;
         for( int i = 0 ; i < this->points.size() ; i++){
           int old_cluster = points[i].cluster;
-          int new_cluster = this->findNearestCenter( points[i]);
+          int new_cluster = 0;
+          double min;
 
+          //achando o cluster mais proximo
+
+          for( int j = 0 ; j < n_clusters ; j++){
+            double dist = points[i].Distance( this->clusters[j].center );
+            if( j == 0 || dist < min){
+              min = dist;
+              new_cluster = j;
+            }
+          }
+
+          cout<<i<<" - "<<old_cluster<<" "<<new_cluster<<endl;
+
+          
           //se continuar no mesmo cluster, nao faz nada
           //Se muda, exclui do anterior adiciona no novo, aciona a flag de mudança
           if( old_cluster != new_cluster){
@@ -158,32 +233,100 @@ public:
 
             clusters[new_cluster].addPoint( this->points[i] );
             this->points[i].cluster = new_cluster;
-
+            
           }
-        }
 
+        }
         //recalculando os centroides
-  //FONFON
         for( int i = 0 ; i < this->clusters.size() ; i++){
-          clusters[i].center = getNewCenterByFreq( clusters[i]);
+          Point p( dimension ,  getNewCenterByFreq( clusters[i]) );
+          
+          clusters[i].center = p;
+          
         }
         
-        if( iter > max_iter || !change )break;
-        this->
-
-        
+        iter++;
+        cout<<iter<<endl;
+        if( iter > max_iter || !change )break;  
     }
   }
 
 
 };
 
+vector<Point> buildPoints(){
+    vector<Point> pts; 
+
+    for( int i = 0 ; i < n_elements ; i++){
+      
+      vector<int> vls;
+      for( int j = 0 ; j < dimension ; j++){
+        int x = searchRating( i , movieList[j]);
+        vls.push_back(x);
+      }
+
+      Point np( dimension , vls );
+      pts.push_back( np );
+      
+    }
+
+    return pts;
+}
+
 int main(){
 
   srand( time( NULL));
+  vector<Point> pts;
+  char num[20];
+  string str;
+  int x;
+
+  //readDataSet();
+
+  // for( int i = 0 ; i < n_elements ; i++){
+
+  //   vector<pair<int, int> > :: iterator it;
+
+  //    for( it = dataPoints[i].begin() ; it != dataPoints[i].end() ; it++){
+  //      cout<<it->first<<","<<it->second<<"|";
+  //    }
+  //    cout <<endl;
+      
+  // }
+ // ifstream myfile( "output.txt");
+
+  // if( myfile.is_open()){
+  //   while( getline (myfile,str)){
+
+  //     int x = atoi( str.c_str() );
+  //     movieList.push_back( x );
+  //   }
+    
+  //   myfile.close();
+  // }
+  // pts = buildPoints();
+
+  cin>>n_elements>>dimension>>n_clusters;
+
+  for( int i = 0 ; i < n_elements ; i++){
+    
+    vector<int> vls;
+    for( int j = 0 ; j < dimension ; j++){
+      cin >>x;
+      vls.push_back(x);
+    }
+
+    Point np( dimension , vls );
+    pts.push_back( np );
+    
+  }
+
+  Kmeans kmm( pts , n_clusters);
+  kmm.run();
 
 
-
+  
+  
 
 
   return 0;

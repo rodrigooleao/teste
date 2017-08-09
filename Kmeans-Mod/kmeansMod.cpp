@@ -7,12 +7,13 @@
 #include <utility>
 #include <fstream>
 #include <string>
+#include <unordered_map>
 
 using namespace std;
 
 int dimension = 9125;
 int n_clusters;
-int max_iter;
+int max_iter = 10000000;
 int total_points;
 int n_elements = 671;
 vector<pair<int, int> > dataPoints[671];
@@ -115,6 +116,48 @@ public:
   void addPoint( Point p){
     this->points.push_back( p );
   }
+
+  void UpdateCenter(){
+    unordered_map<int, int> mapa;
+    unordered_map<int, int> :: iterator it;
+
+    for( int i = 0 ; i < dimension ; i++){
+
+      mapa.clear();
+
+      for( int j = 0 ; j < this->points.size() ; j++){
+        int x = this->points[j].values[i];
+
+        it = mapa.find(x);
+
+        if( it == mapa.end()){
+          mapa[x] = 1;
+        }
+        else{
+          mapa[x]++;
+        }
+      }
+
+      int max = 0;
+      int result = 0;
+      bool equal = false;
+      for( it = mapa.begin() ; it != mapa.end() ; it++ ){
+        if( it->second > max ){
+          max = it->second;
+          result = it->first;
+          equal = false;
+        }
+        else if( it->second == max ){
+          equal = true;
+        }
+      }
+      
+      if( equal )
+        result = true;
+
+      this->center.values[i] = result;
+    }
+  }
 };
 
 class Kmeans{
@@ -167,45 +210,19 @@ public:
     return cluster;
   }
 
-  vector<int> getNewCenterByFreq( Cluster c){
-    vector<int> newCenter;
-    int cont[5];
-
-    
-      
-    for( int i = 0 ; i < dimension ; i++){
-
-      for( int k = 0 ; k < 10 ; k++)cont[k] = 0;
-      
-      for( int j = 0 ; j < c.points.size(); j++){
-        cont[ c.points[j].values[i] - 1]++;
-      }
-
-      int maior = 0;
-      for( int k = 0 ; k < 5 ; k++){
-        if( cont[k] > maior){
-          maior = k;
-        }
-      }
-
-      sort( cont , cont+5);
-
-      if( cont[4] == cont[3])maior = 0;
-
-      newCenter.push_back( maior) ;
-    }
-
-    return newCenter;
-  }
   void run(){
     cout<<"RUN START"<<endl;
     this->CreateClusters();
     
     int iter = 0;
+    int cont;
 
     while( 1 ){
-      
+
+        cout<<"Realocando pontos..."<<endl;
         bool change = false;
+        cont = 0;
+
         for( int i = 0 ; i < this->points.size() ; i++){
           int old_cluster = points[i].cluster;
           int new_cluster = 0;
@@ -221,13 +238,12 @@ public:
             }
           }
 
-          cout<<i<<" - "<<old_cluster<<" "<<new_cluster<<endl;
-
-          
+         
           //se continuar no mesmo cluster, nao faz nada
           //Se muda, exclui do anterior adiciona no novo, aciona a flag de mudança
           if( old_cluster != new_cluster){
             change = true;
+            cont++;
             if( old_cluster != -1)
               clusters[old_cluster].removePoint( this->points[i] );
 
@@ -235,13 +251,13 @@ public:
             this->points[i].cluster = new_cluster;
             
           }
-
-        }
-        //recalculando os centroides
-        for( int i = 0 ; i < this->clusters.size() ; i++){
-          Point p( dimension ,  getNewCenterByFreq( clusters[i]) );
           
-          clusters[i].center = p;
+        }
+        cout<<cont<<" pontos realocados"<<endl;
+        //recalculando os centroides
+        cout<<"Recalculando centroides..."<<endl;
+        for( int i = 0 ; i < this->clusters.size() ; i++){
+          clusters[i].UpdateCenter();
           
         }
         
@@ -254,24 +270,6 @@ public:
 
 };
 
-vector<Point> buildPoints(){
-    vector<Point> pts; 
-
-    for( int i = 0 ; i < n_elements ; i++){
-      
-      vector<int> vls;
-      for( int j = 0 ; j < dimension ; j++){
-        int x = searchRating( i , movieList[j]);
-        vls.push_back(x);
-      }
-
-      Point np( dimension , vls );
-      pts.push_back( np );
-      
-    }
-
-    return pts;
-}
 
 int main(){
 
@@ -281,18 +279,6 @@ int main(){
   string str;
   int x;
 
-  //readDataSet();
-
-  // for( int i = 0 ; i < n_elements ; i++){
-
-  //   vector<pair<int, int> > :: iterator it;
-
-  //    for( it = dataPoints[i].begin() ; it != dataPoints[i].end() ; it++){
-  //      cout<<it->first<<","<<it->second<<"|";
-  //    }
-  //    cout <<endl;
-      
-  // }
  // ifstream myfile( "output.txt");
 
   // if( myfile.is_open()){
@@ -324,10 +310,18 @@ int main(){
   Kmeans kmm( pts , n_clusters);
   kmm.run();
 
+  vector<Cluster> :: iterator it;
+
+  for( it = kmm.clusters.begin() ; it != kmm.clusters.end() ; it++){
+
+      vector<int> real;
+      vector<int> predict;
+
+      for( int i = 0 ; i < it->points.size() * 0.8 ; i++){
+          predict.push_back( kmm.)
+      }
+  }
 
   
-  
-
-
   return 0;
 }

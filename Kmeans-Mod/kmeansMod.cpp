@@ -13,7 +13,7 @@ using namespace std;
 
 int dimension = 9125;
 int n_clusters;
-int max_iter = 10000000;
+int max_iter = 1000000;
 int total_points;
 int n_elements = 671;
 vector<pair<int, int> > dataPoints[671];
@@ -81,7 +81,7 @@ public:
 
   }
 
-  double Distance( Point p){
+  double euclideanDistance( Point p){
     double sum = 0.0;
 
     for( int i = 0 ; i < this->dimension ; i++){
@@ -92,6 +92,10 @@ public:
 
     return sum;
   }
+
+  // double cosineDistance( Point p){
+    
+  // }
 };
 
 class Cluster{
@@ -196,11 +200,11 @@ public:
   }
 
   int findNearestCenter( int i){
-    double min = this->points[i].Distance( clusters[0].center);
+    double min = this->points[i].euclideanDistance( clusters[0].center);
     int cluster = 0;
 
     for( int i = 0 ; i < n_clusters ; i++){
-      double dist = this->points[i].Distance( clusters[i].center );
+      double dist = this->points[i].euclideanDistance( clusters[i].center );
       if( dist < min ){
         min = dist;
         cluster = i;
@@ -219,7 +223,7 @@ public:
 
     while( 1 ){
 
-        cout<<"Realocando pontos..."<<endl;
+        //cout<<"Realocando pontos..."<<endl;
         bool change = false;
         cont = 0;
 
@@ -231,7 +235,7 @@ public:
           //achando o cluster mais proximo
 
           for( int j = 0 ; j < n_clusters ; j++){
-            double dist = points[i].Distance( this->clusters[j].center );
+            double dist = points[i].euclideanDistance( this->clusters[j].center );
             if( j == 0 || dist < min){
               min = dist;
               new_cluster = j;
@@ -253,19 +257,36 @@ public:
           }
           
         }
-        cout<<cont<<" pontos realocados"<<endl;
+        // cout<<cont<<" pontos realocados"<<endl;
         //recalculando os centroides
-        cout<<"Recalculando centroides..."<<endl;
+        // cout<<"Recalculando centroides..."<<endl;
         for( int i = 0 ; i < this->clusters.size() ; i++){
           clusters[i].UpdateCenter();
           
         }
         
         iter++;
-        cout<<iter<<endl;
+        if( iter%1000 == 0 )
+          cout<<iter<<endl;
         if( iter > max_iter || !change )break;  
     }
   }
+
+double calculateRMSE( vector<pair<int,int> > predictions){
+  double result = 0.0 , sum = 0.0;
+  vector<pair<int,int> >::iterator it;
+
+  
+  for( it = predictions.begin() ; it != predictions.end() ; it++){
+    sum += (( it->first - it->second) * ( it->first - it->second)); 
+  }
+
+  sum = sum / (predictions.size());
+
+  result = sqrt( sum );
+
+  return result;
+}
 
 
 };
@@ -311,16 +332,24 @@ int main(){
   kmm.run();
 
   vector<Cluster> :: iterator it;
+  vector<pair<int,int> > predictions;
 
   for( it = kmm.clusters.begin() ; it != kmm.clusters.end() ; it++){
 
-      vector<int> real;
-      vector<int> predict;
+      
+      Point predicted = it->center;
 
-      for( int i = 0 ; i < it->points.size() * 0.8 ; i++){
-          predict.push_back( kmm.)
+      for( int i = 0 ; i < it->points.size() ; i++){
+          for( int j = 0 ; j < dimension * 0.5 ; j++){
+            predictions.push_back( make_pair( it->points[i].values[j] , predicted.values[j]));
+          }
       }
   }
+
+  double result = kmm.calculateRMSE( predictions );
+
+  cout <<result<<endl;
+
 
   
   return 0;

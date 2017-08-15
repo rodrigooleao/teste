@@ -8,6 +8,7 @@
 #include <fstream>
 #include <string>
 #include <unordered_map>
+#include <cstdlib>
 
 using namespace std;
 
@@ -318,7 +319,7 @@ public:
     vector<int> ::iterator it;
     int cont = 0;
     for( int i  = 0 ; i <  activeCluster.center.values.size() ; i++){
-      if( activeCluster.center.values[i] > 1 ){
+      if( activeCluster.center.values[i] > 3 ){
         cont++;
         recomendations.push_back( moviesData[i+1].nome);
       } 
@@ -332,7 +333,7 @@ public:
   }
 };
 
-int main(){
+int main( int argc, char* argv[]){
 
   srand( time( NULL));
 
@@ -343,6 +344,7 @@ int main(){
 
   vector<Movie> moviesData;
   ifstream arqMovie( "datasets/movie.data");
+  ifstream arqData("datasets/out.txt");
 
   //Lendo o dataset com as infos do filmes;
   if( arqMovie.is_open()){
@@ -361,20 +363,28 @@ int main(){
     arqMovie.close();
   }
   //Lendo os dados dos Usuários
-  cin>>n_elements>>dimension>>n_clusters;
+  //cin>>n_elements>>dimension>>n_clusters;
+
+  n_elements = atoi( argv[1]);
+  dimension = atoi( argv[2]);
+  n_clusters = atoi( argv[3]);
+
 
   for( int i = 0 ; i < n_elements ; i++){
     
     vector<int> vls;
-    for( int j = 0 ; j < dimension ; j++){
-      cin >>x;
-      vls.push_back(x);
+    string str;
+    getline( arqData , str);
+    for( int j = 0 ; j < str.size() ; j+=2){
+      vls.push_back(str[j] - 48);
     }
-
+    cout <<vls.size()<<endl;
     Point np( dimension , vls );
     pts.push_back( np );
     
   }
+
+  
 
   Kmeans kmm( pts , n_clusters);
   kmm.run();
@@ -383,14 +393,14 @@ int main(){
 
   cout <<"RMSE: "<<result<<endl; 
 
-  // while( true ){
-  //   cout <<"Qual seu ID?"<<endl;
-  //   int x;
+  while( true ){
 
-  //   cin >>x;
-  //   cout <<"***"<<x<<"***"<<endl;
-  //   kmm.getRecomendations( 23 , moviesData );
-  // }
+    cout <<"Qual seu ID?"<<endl<<endl<<"-> ";
+    int x;
+
+    cin >>x;
+    kmm.getRecomendations( x , moviesData );
+  }
 
   kmm.getRecomendations( 148 , moviesData );
   

@@ -13,7 +13,7 @@ using namespace std;
 
 int dimension = 9125;
 int n_clusters;
-int max_iter = 1000000;
+int max_iter = 100;
 int total_points;
 int n_elements = 671;
 vector<pair<int, int> > dataPoints[671];
@@ -52,6 +52,12 @@ int searchRating( int user , int movie){
 
   return 0;
 }
+
+class Movie{
+public:
+  string nome;
+  int id;
+};
 
 class Point{
 public:
@@ -166,6 +172,7 @@ public:
 
 class Kmeans{
 public:
+
   int n_clusters;
   vector<Point> points;
   vector<Cluster> clusters;
@@ -193,7 +200,7 @@ public:
 
       
       chosen.push_back( x );
-      cout <<x<<endl;
+      //cout <<x<<endl;
       clusters[i].center =  this->points[x];
       
     }
@@ -220,11 +227,12 @@ public:
     
     int iter = 0;
     int cont;
+    bool change = true;
 
-    while( 1 ){
+    while( iter < max_iter && change ){
 
         //cout<<"Realocando pontos..."<<endl;
-        bool change = false;
+        change = false;
         cont = 0;
 
         for( int i = 0 ; i < this->points.size() ; i++){
@@ -267,52 +275,92 @@ public:
         
         iter++;
         if( iter%1000 == 0 )
-          cout<<iter<<endl;
-        if( iter > max_iter || !change )break;  
+          cout<<iter<<endl; 
     }
   }
 
-double calculateRMSE( vector<pair<int,int> > predictions){
-  double result = 0.0 , sum = 0.0;
-  vector<pair<int,int> >::iterator it;
+  double calculateRMSE(){
 
-  
-  for( it = predictions.begin() ; it != predictions.end() ; it++){
-    sum += (( it->first - it->second) * ( it->first - it->second)); 
+    double result = 0.0 , sum = 0.0;
+    vector<pair<int,int> >::iterator it;
+    vector<Cluster> :: iterator itc;
+    vector<pair<int,int> > predictions;
+
+    for( itc = this->clusters.begin() ; itc != this->clusters.end() ; itc++){
+
+        
+        Point predicted = itc->center;
+
+        for( int i = 0 ; i < itc->points.size() ; i++){
+            for( int j = 0 ; j < dimension * 0.2 ; j++){
+              predictions.push_back( make_pair( itc->points[i].values[j]   , predicted.values[j]));
+            }
+        }
+    }
+    
+    for( it = predictions.begin() ; it != predictions.end() ; it++){
+      sum += (( it->first - it->second) * ( it->first - it->second)); 
+    }
+
+    sum = sum / (predictions.size());
+
+    result = sqrt( sum );
+
+    return result;
   }
 
-  sum = sum / (predictions.size());
+  void getRecomendations( int n , vector<Movie> moviesData){
 
-  result = sqrt( sum );
+    vector<string> recomendations;
+    Point activeUser = this->points[n];
+    Cluster activeCluster = this->clusters[ activeUser.cluster];
 
-  return result;
-}
+    vector<int> ::iterator it;
+    int cont = 0;
+    for( int i  = 0 ; i <  activeCluster.center.values.size() ; i++){
+      if( activeCluster.center.values[i] > 1 ){
+        cont++;
+        recomendations.push_back( moviesData[i+1].nome);
+      } 
+    }
 
+    cout <<"********** Filmes Recomendados ********"<<endl;
 
+    for( int i = 0 ; i < recomendations.size() ; i++){
+      cout<<recomendations[i]<<endl;
+    }
+  }
 };
-
 
 int main(){
 
   srand( time( NULL));
+
+
   vector<Point> pts;
-  char num[20];
   string str;
   int x;
 
- // ifstream myfile( "output.txt");
+  vector<Movie> moviesData;
+  ifstream arqMovie( "datasets/movie.data");
 
-  // if( myfile.is_open()){
-  //   while( getline (myfile,str)){
+  //Lendo o dataset com as infos do filmes;
+  if( arqMovie.is_open()){
+    while( getline (arqMovie,str)){
 
-  //     int x = atoi( str.c_str() );
-  //     movieList.push_back( x );
-  //   }
+      Movie novo;
+
+      novo.id = atoi( str.c_str() );
+      
+      string nome;
+      getline (arqMovie,novo.nome);
+
+      moviesData.push_back( novo );
+    }
     
-  //   myfile.close();
-  // }
-  // pts = buildPoints();
-
+    arqMovie.close();
+  }
+  //Lendo os dados dos Usuários
   cin>>n_elements>>dimension>>n_clusters;
 
   for( int i = 0 ; i < n_elements ; i++){
@@ -331,26 +379,20 @@ int main(){
   Kmeans kmm( pts , n_clusters);
   kmm.run();
 
-  vector<Cluster> :: iterator it;
-  vector<pair<int,int> > predictions;
+  double result = kmm.calculateRMSE();
 
-  for( it = kmm.clusters.begin() ; it != kmm.clusters.end() ; it++){
+  cout <<"RMSE: "<<result<<endl; 
 
-      
-      Point predicted = it->center;
+  // while( true ){
+  //   cout <<"Qual seu ID?"<<endl;
+  //   int x;
 
-      for( int i = 0 ; i < it->points.size() ; i++){
-          for( int j = 0 ; j < dimension * 0.5 ; j++){
-            predictions.push_back( make_pair( it->points[i].values[j] , predicted.values[j]));
-          }
-      }
-  }
+  //   cin >>x;
+  //   cout <<"***"<<x<<"***"<<endl;
+  //   kmm.getRecomendations( 23 , moviesData );
+  // }
 
-  double result = kmm.calculateRMSE( predictions );
-
-  cout <<result<<endl;
-
-
+  kmm.getRecomendations( 148 , moviesData );
   
   return 0;
 }

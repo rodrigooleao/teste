@@ -54,6 +54,32 @@ int searchRating( int user , int movie){
   return 0;
 }
 
+vector<string> Parse( string str , char token){
+    vector<string> result;
+    string r;
+
+    int ini = 0, fim = 0;
+
+    while( fim < str.size() ){
+        if( str[fim] == token ){
+            r = str.substr( ini , (fim - ini));
+            
+            cout<<r<<endl;
+            result.push_back( r );
+
+            while( str[fim] == token)fim++;
+            ini = fim;
+        }
+        fim++;
+    }
+
+    r = str.substr( ini , (fim - ini));
+    cout<<r<<endl;
+    result.push_back( r );
+
+    return result;
+}
+
 class Movie{
 public:
   string nome;
@@ -321,7 +347,8 @@ public:
     for( int i  = 0 ; i <  activeCluster.center.values.size() ; i++){
       if( activeCluster.center.values[i] > 3 ){
         cont++;
-        recomendations.push_back( moviesData[i+1].nome);
+        if( cont <= 10)
+          recomendations.push_back( moviesData[i+1].nome);
       } 
     }
 
@@ -331,6 +358,53 @@ public:
       cout<<recomendations[i]<<endl;
     }
   }
+
+  void getPersonalRecomendations( vector<Movie> moviesData){
+    int x , nota;
+    vector<int> chosen;
+    vector<int> vls(dimension , 0);
+    
+    for( int i = 0 ; i < 25 ; i++){
+      do{
+         x = rand()%dimension;
+      }while( find( chosen.begin() , chosen.end() , x) != chosen.end());
+
+      chosen.push_back(x);
+      cout<<"Qual nota voce daria para o filme:  " <<moviesData[x].nome<<" (0 caso nao tenha assistido)"<<endl;
+      cin >> nota;
+
+      vls[x] = nota;
+    }
+
+    Point p( dimension , vls );
+
+    int closest = 0;
+    double min;
+
+    //achando o cluster mais proximo
+
+    for( int j = 0 ; j < n_clusters ; j++){
+      double dist = p.euclideanDistance( this->clusters[j].center );
+      if( j == 0 || dist < min){
+        min = dist;
+        closest = j;
+      }
+    }
+
+    cout<<"cl : " <<closest<<endl;
+
+    Point center = this->clusters[closest].center;
+
+    cout<<"cl : " <<center.values.size()<<endl;
+
+    for( int i = 0 ; i < center.values.size() ; i++){
+      if( center.values[i] > 0){
+        cout<<moviesData[i].nome<<endl;
+      }
+    }
+
+  }
+
 };
 
 int main( int argc, char* argv[]){
@@ -340,11 +414,12 @@ int main( int argc, char* argv[]){
 
   vector<Point> pts;
   string str;
+  vector<string> vstr;
   int x;
 
   vector<Movie> moviesData;
   ifstream arqMovie( "datasets/movie.data");
-  ifstream arqData("datasets/out.txt");
+  ifstream arqData(argv[1]);
 
   //Lendo o dataset com as infos do filmes;
   if( arqMovie.is_open()){
@@ -365,20 +440,29 @@ int main( int argc, char* argv[]){
   //Lendo os dados dos Usuários
   //cin>>n_elements>>dimension>>n_clusters;
 
-  n_elements = atoi( argv[1]);
-  dimension = atoi( argv[2]);
-  n_clusters = atoi( argv[3]);
+  // n_elements = atoi( argv[1]);
+  // dimension = atoi( argv[2]);
+  // n_clusters = atoi( argv[3]);
 
+  getline( arqData , str);
+
+  vstr = Parse( str , ' ');
+
+  n_elements = atoi( vstr[0].c_str());
+  dimension = atoi( vstr[1].c_str());
+  n_clusters = atoi( vstr[2].c_str());
+
+  
 
   for( int i = 0 ; i < n_elements ; i++){
     
     vector<int> vls;
-    string str;
+
     getline( arqData , str);
     for( int j = 0 ; j < str.size() ; j+=2){
       vls.push_back(str[j] - 48);
     }
-    cout <<vls.size()<<endl;
+   
     Point np( dimension , vls );
     pts.push_back( np );
     
@@ -393,16 +477,17 @@ int main( int argc, char* argv[]){
 
   cout <<"RMSE: "<<result<<endl; 
 
-  while( true ){
+  // while( true ){
 
-    cout <<"Qual seu ID?"<<endl<<endl<<"-> ";
-    int x;
+  //   cout <<"Qual seu ID?"<<endl<<endl<<"-> ";
+  //   int x;
 
-    cin >>x;
-    kmm.getRecomendations( x , moviesData );
-  }
+  //   cin >>x;
+  //   kmm.getRecomendations( x , moviesData );
+  // }
 
-  kmm.getRecomendations( 148 , moviesData );
+  //kmm.getRecomendations( 148 , moviesData );
+  kmm.getPersonalRecomendations( moviesData );
   
   return 0;
 }

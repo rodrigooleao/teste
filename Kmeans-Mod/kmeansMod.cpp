@@ -364,7 +364,7 @@ public:
     vector<int> chosen;
     vector<int> vls(dimension , 0);
     
-    for( int i = 0 ; i < 25 ; i++){
+    for( int i = 0 ; i < 10 ; i++){
       do{
          x = rand()%dimension;
       }while( find( chosen.begin() , chosen.end() , x) != chosen.end());
@@ -393,15 +393,16 @@ public:
 
     cout<<"cl : " <<closest<<endl;
 
-    Point center = this->clusters[closest].center;
+    Cluster closestCluster = this->clusters[closest];
 
-    cout<<"cl : " <<center.values.size()<<endl;
+    cout<<"cl : " <<closestCluster.center.values.size()<<endl;
 
-    for( int i = 0 ; i < center.values.size() ; i++){
-      if( center.values[i] > 0){
+    for( int i = 0 ; i < closestCluster.center.values.size() ; i++){
+      if( closestCluster.center.values[i] > 3){
         cout<<moviesData[i].nome<<endl;
       }
     }
+    cout<<endl;
 
   }
 
@@ -477,16 +478,17 @@ int main( int argc, char* argv[]){
 
   cout <<"RMSE: "<<result<<endl; 
 
-  // while( true ){
+  while( true ){
 
-  //   cout <<"Qual seu ID?"<<endl<<endl<<"-> ";
-  //   int x;
+    cout <<"Qual seu ID?"<<endl<<endl<<"-> ";
+    int x;
 
-  //   cin >>x;
-  //   kmm.getRecomendations( x , moviesData );
-  // }
+    cin >>x;
+    if( x == -1)break;
+    kmm.getRecomendations( x , moviesData );
+  }
 
-  //kmm.getRecomendations( 148 , moviesData );
+  kmm.getRecomendations( 148 , moviesData );
   kmm.getPersonalRecomendations( moviesData );
   
   return 0;

@@ -393,16 +393,31 @@ public:
 
     cout<<"cl : " <<closest<<endl;
 
-    Cluster closestCluster = this->clusters[closest];
+    //Cluster closestCluster = this->clusters[closest];
 
-    cout<<"cl : " <<closestCluster.center.values.size()<<endl;
+    //cout<<"cl : " <<closestCluster.center.values.size()<<endl;
 
-    for( int i = 0 ; i < closestCluster.center.values.size() ; i++){
-      if( closestCluster.center.values[i] > 3){
-        cout<<moviesData[i].nome<<endl;
+    // for( int i = 0 ; i < closestCluster.center.values.size() ; i++){
+    //   if( closestCluster.center.values[i] > 3){
+    //     cout<<moviesData[i].nome<<endl;
+    //   }
+    // }
+    // cout<<endl;
+
+    
+    for( int i = 0 ; i < n_clusters ; i++){
+      Cluster clt = this->clusters[i];
+      int cont = 0;
+  
+      for( int j = 0 ; j < clt.center.values.size() ; j++){
+        if( clt.center.values[j] > 0){
+          cont++;
+        }
       }
+
+      cout<<"Cluster: "<<i<<" - Valores: "<<cont<<" - Pontos: "<<this->clusters[i].points.size()<<endl;
     }
-    cout<<endl;
+
 
   }
 

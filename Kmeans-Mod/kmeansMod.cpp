@@ -17,42 +17,6 @@ int n_clusters;
 int max_iter = 100;
 int total_points;
 int n_elements = 671;
-vector<pair<int, int> > dataPoints[671];
-vector<int> movieList;
-
-void readDataSet(){
-  
-  pair<int, int> novo;
-  int a , b;
-  int pos = 0;
-  while( cin >>a>>b ){
-    if( a == -1 && b == -1){
-      pos++;
-      continue;
-    }
-    else{
-      novo = make_pair(a , b);
-      dataPoints[pos].push_back(novo);
-     // cout <<novo.first<<" "<<novo.second<<endl;
-    }
-  }
-  
-}
-
-int searchRating( int user , int movie){
-  vector<pair<int, int> > :: iterator it;
-
-  for( it = dataPoints[user].begin() ; it != dataPoints[user].end() ; it++ ){
-    if( it->first == movie ){
-      return it->second;
-    }
-    else if( it->first > movie){
-      return 0;
-    }
-  } 
-
-  return 0;
-}
 
 vector<string> Parse( string str , char token){
     vector<string> result;
@@ -114,7 +78,7 @@ public:
 
   }
 
-  double euclideanDistance( Point p){
+  double EuclideanDistance( Point p){
     double sum = 0.0;
 
     for( int i = 0 ; i < this->dimension ; i++){
@@ -126,9 +90,28 @@ public:
     return sum;
   }
 
-  // double cosineDistance( Point p){
-    
-  // }
+  double cosineDistance( Point p){
+    double normau = 0.0 , normav = 0.0;
+    double result = 0.0;
+    double den;
+
+    for( int i = 0 ; i < dimension ; i++ ){
+      normau += this->values[i] * this->values[i];
+      normav += p.values[i] * p.values[i];
+
+      result += (this->values[i]) * (p.values[i]);
+    }
+
+    den = normau * normav;
+
+    if( den == 0)
+      den = 1;
+    result = result / den;
+
+    cout<<result<<" ";
+    return result;
+
+  }
 };
 
 class Cluster{
@@ -190,7 +173,7 @@ public:
       }
       
       if( equal )
-        result = true;
+        result = 0;
 
       this->center.values[i] = result;
     }
@@ -234,11 +217,11 @@ public:
   }
 
   int findNearestCenter( int i){
-    double min = this->points[i].euclideanDistance( clusters[0].center);
+    double min = this->points[i].EuclideanDistance( clusters[0].center);
     int cluster = 0;
 
     for( int i = 0 ; i < n_clusters ; i++){
-      double dist = this->points[i].euclideanDistance( clusters[i].center );
+      double dist = this->points[i].EuclideanDistance( clusters[i].center );
       if( dist < min ){
         min = dist;
         cluster = i;
@@ -270,7 +253,7 @@ public:
           //achando o cluster mais proximo
 
           for( int j = 0 ; j < n_clusters ; j++){
-            double dist = points[i].euclideanDistance( this->clusters[j].center );
+            double dist = points[i].EuclideanDistance( this->clusters[j].center );
             if( j == 0 || dist < min){
               min = dist;
               new_cluster = j;
@@ -376,6 +359,11 @@ public:
       vls[x] = nota;
     }
 
+    for( int i = 0 ; i < vls.size() ; i++){
+      cout<<vls[i]<<" ";
+    }
+    cout<<endl;
+
     Point p( dimension , vls );
 
     int closest = 0;
@@ -383,42 +371,28 @@ public:
 
     //achando o cluster mais proximo
 
-    for( int j = 0 ; j < n_clusters ; j++){
-      double dist = p.euclideanDistance( this->clusters[j].center );
+    for( int j = 0 ; j < n_elements ; j++){
+      double dist = p.EuclideanDistance( this->points[j] );
       if( j == 0 || dist < min){
         min = dist;
         closest = j;
       }
+      //cout<<"Distancia para ponto " <<j<<" : "<<dist<<"\t";
     }
+
+    cout<<endl<<endl<<"Min dist: "<<closest<<endl;
 
     cout<<"cl : " <<closest<<endl;
+    Cluster closestCluster = this->clusters[this->points[closest].cluster];
 
-    //Cluster closestCluster = this->clusters[closest];
+    cout<<"cl : " <<this->points[closest].cluster<<endl;
 
-    //cout<<"cl : " <<closestCluster.center.values.size()<<endl;
-
-    // for( int i = 0 ; i < closestCluster.center.values.size() ; i++){
-    //   if( closestCluster.center.values[i] > 3){
-    //     cout<<moviesData[i].nome<<endl;
-    //   }
-    // }
-    // cout<<endl;
-
-    
-    for( int i = 0 ; i < n_clusters ; i++){
-      Cluster clt = this->clusters[i];
-      int cont = 0;
-  
-      for( int j = 0 ; j < clt.center.values.size() ; j++){
-        if( clt.center.values[j] > 0){
-          cont++;
-        }
+    for( int i = 0 ; i < closestCluster.center.values.size() ; i++){
+      if( closestCluster.center.values[i] > 3){
+        cout<<moviesData[i].nome<<endl;
       }
-
-      cout<<"Cluster: "<<i<<" - Valores: "<<cont<<" - Pontos: "<<this->clusters[i].points.size()<<endl;
     }
-
-
+    cout<<endl;
   }
 
 };
@@ -493,6 +467,18 @@ int main( int argc, char* argv[]){
 
   cout <<"RMSE: "<<result<<endl; 
 
+  for( int i = 0 ; i < n_clusters ; i++){
+      Cluster clt = kmm.clusters[i];
+      int cont = 0;
+  
+      for( int j = 0 ; j < clt.center.values.size() ; j++){
+        if( clt.center.values[j] > 0){
+          cont++;
+        }
+      }
+
+      cout<<"Cluster: "<<i<<" - Valores: "<<cont<<" - Pontos: "<<kmm.clusters[i].points.size()<<endl;
+    }
   while( true ){
 
     cout <<"Qual seu ID?"<<endl<<endl<<"-> ";
@@ -503,7 +489,6 @@ int main( int argc, char* argv[]){
     kmm.getRecomendations( x , moviesData );
   }
 
-  kmm.getRecomendations( 148 , moviesData );
   kmm.getPersonalRecomendations( moviesData );
   
   return 0;
